@@ -1,48 +1,62 @@
-"""Run One Training Step: Forward, Loss, Backward, Optimizer"""
+"""One Training Step"""
 
 import torch
 import torch.nn as nn
 
-def train_one_step(model: nn.Module, x: torch.Tensor, y: torch.Tensor, lr: float) -> float:
-    # TODO: build an SGD optimizer, run one full forward/loss/backward/step cycle,
-    # and return the pre-update loss as a Python float.
 
-    # Initialize SGD optimizer
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+def train_step(model, x, y, optimizer, loss_fn):
+    """Run one training step and return the pre-update loss as a float.
 
-    # Clear previous gradients
+    Args:
+        model: torch.nn.Module to train.
+        x: Input batch tensor.
+        y: Target batch tensor.
+        optimizer: torch.optim optimizer bound to model parameters.
+        loss_fn: Callable (pred, y) -> scalar loss tensor.
+
+    Returns:
+        float: Loss value computed before optimizer.step().
+    """
+    # TODO: zero_grad -> forward -> loss -> backward -> step; return float loss
+
+    # Zero out optimizer's gradients
     optimizer.zero_grad()
 
     # Forward pass
-    y_pred = model(x)
+    pred = model(x)
 
-    # Compute MSE loss
-    loss_fn = nn.MSELoss()
-    loss = loss_fn(y_pred, y)
+    # Loss
+    loss = loss_fn(pred, y)
 
     # Backward pass
     loss.backward()
 
-    # Update parameters
+    # Step
     optimizer.step()
 
-    # Return loss as a float
-    return loss.item()
+    # Return float loss
+    return float(loss.item())
 
-model = nn.Linear(1, 1)
 
+# Test 1
+model = nn.Linear(2, 1)
 with torch.no_grad():
-    model.weight.fill_(1.0)
-    model.bias.fill_(0.0)
+    model.weight.copy_(torch.tensor([[0.5, -0.3]]))
+    model.bias.copy_(torch.tensor([0.1]))
+opt = torch.optim.SGD(model.parameters(), lr=0.1)
+loss_fn = nn.MSELoss()
+x = torch.tensor([[1.0, 2.0]])
+y = torch.tensor([[1.0]])
+print(round(train_step(model, x, y, opt, loss_fn), 4))
 
-x = torch.tensor([[2.0]])
-y = torch.tensor([[6.0]])
-lr = 0.1
-
-loss = train_one_step(model, x, y, lr)
-
-print(loss)
-print(model.weight)
-print(model.bias)
-
-
+# Test 2
+model = nn.Linear(2, 1)
+with torch.no_grad():
+    model.weight.copy_(torch.tensor([[0.5, -0.3]]))
+    model.bias.copy_(torch.tensor([0.1]))
+opt = torch.optim.SGD(model.parameters(), lr=0.1)
+loss_fn = nn.MSELoss()
+x = torch.tensor([[1.0, 2.0]])
+y = torch.tensor([[1.0]])
+train_step(model, x, y, opt, loss_fn)
+print(round(train_step(model, x, y, opt, loss_fn), 4))
